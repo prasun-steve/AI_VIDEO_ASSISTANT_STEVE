@@ -1,41 +1,10 @@
-import yt_dlp
 from pydub import AudioSegment
-import base64
 import os
 from pathlib import Path
 from uuid import uuid4
 
 DOWNLOAD_DIR = Path(__file__).resolve().parents[1] / "downloades"
 DOWNLOAD_DIR.mkdir(exist_ok=True)
-
-
-def _write_youtube_cookies(run_dir: Path) -> Path | None:
-    """Materialize an optional Render secret as a short-lived cookie file."""
-    encoded_cookies = os.getenv("YOUTUBE_COOKIES_B64")
-    if not encoded_cookies:
-        return None
-
-    # Preferred: base64, which is safe to paste as a single Render secret.
-    # Also accept a raw Netscape cookie file pasted into an environment value;
-    # Render supports multiline secret values and this makes setup less fragile.
-    value = encoded_cookies.strip()
-    if value.startswith(("# HTTP Cookie File", "# Netscape HTTP Cookie File")):
-        cookies = value.replace("\\n", "\n").encode("utf-8")
-    else:
-        try:
-            cookies = base64.b64decode(value, validate=True)
-        except Exception as error:
-            raise RuntimeError(
-                "YOUTUBE_COOKIES_B64 must contain either base64-encoded data "
-                "or raw Netscape/Mozilla cookies.txt content."
-            ) from error
-    if not cookies.startswith((b"# HTTP Cookie File", b"# Netscape HTTP Cookie File")):
-        raise RuntimeError(
-            "YOUTUBE_COOKIES_B64 must contain a Netscape/Mozilla cookies.txt file."
-        )
-    cookie_path = run_dir / "youtube-cookies.txt"
-    cookie_path.write_bytes(cookies)
-    return cookie_path
 
 
 def save_uploaded_file(uploaded_file) -> str:
@@ -51,37 +20,6 @@ def save_uploaded_file(uploaded_file) -> str:
     destination = run_dir / safe_name
     destination.write_bytes(uploaded_file.getvalue())
     return str(destination)
-
-def download_youtube_audio(url :str) ->str:
-    run_dir = DOWNLOAD_DIR / uuid4().hex
-    run_dir.mkdir()
-    output_path = str(run_dir / "audio.%(ext)s")
-    ydl_opts = {
-        "format": "bestaudio/best",
-        "outtmpl": output_path,
-        "postprocessors": [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "wav",
-                "preferredquality": "192",
-            }
-        ],
-        "quiet": True,
-    }
-    cookie_path = _write_youtube_cookies(run_dir)
-    if cookie_path:
-        ydl_opts["cookiefile"] = str(cookie_path)
-    user_agent = os.getenv("YOUTUBE_USER_AGENT")
-    if user_agent:
-        ydl_opts["http_headers"] = {"User-Agent": user_agent}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.extract_info(url, download=True)
-    wav_files = list(run_dir.glob("*.wav"))
-    if not wav_files:
-        raise RuntimeError("YouTube audio download finished but FFmpeg did not create a WAV file. Install FFmpeg and retry.")
-    return str(wav_files[0])
-
-
 
 def convert_to_wav(input_path: str) -> str:
     """Convert any audio/video file to WAV format using pydub."""
@@ -122,7 +60,7 @@ def cleanup_audio_files(chunks: list[str]) -> None:
         except OSError as error:
             print(f"Could not remove temporary chunk {chunk}: {error}")
 
-    # YouTube downloads are stored in their own UUID directory, so this is safe.
+    # Uploads are stored in their own UUID directory, so this is safe.
     parent = Path(chunks[0]).parent
     try:
         if parent.parent == DOWNLOAD_DIR:
@@ -148,14 +86,10 @@ def cleanup_temporary_source(source_path: str | None) -> None:
         print(f"Could not remove temporary upload directory: {error}")
 
 def process_input(source: str) -> list:
-    if source.startswith("http://") or source.startswith("https://"):
-        print("Detected YouTube URL. Downloading audio...")
-        wav_path = download_youtube_audio(source)
-    else:
-        if not os.path.isfile(source):
-            raise FileNotFoundError(f"Local file does not exist: {source}")
-        print("Detected local file. Converting to WAV...")
-        wav_path = convert_to_wav(source)
+    if not os.path.isfile(source):
+        raise FileNotFoundError(f"Uploaded file does not exist: {source}")
+    print("Processing uploaded media...")
+    wav_path = convert_to_wav(source)
 
     print("Chunking audio...")
     chunks = chunk_audio(wav_path)

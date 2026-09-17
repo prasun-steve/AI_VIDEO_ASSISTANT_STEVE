@@ -7,7 +7,7 @@ from core.summarizer import summarize, generate_title
 from core.extractor import extract_action_items, extract_key_decisions, extract_questions
 
 
-source = "https://www.youtube.com/watch?v=_Q-e_nczWqM&t=223s"
+source = input("Enter an audio/video file path: ").strip()
 language = "english"   # "english" → Whisper, "hinglish" → Sarvam
 
 

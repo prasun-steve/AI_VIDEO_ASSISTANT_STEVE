@@ -1,6 +1,6 @@
 # AI Video Assistant
 
-This Streamlit app downloads YouTube audio, transcribes it, produces meeting analysis, and supports transcript Q&A.
+This Streamlit app accepts uploaded audio/video files, transcribes them, produces meeting analysis, and supports transcript Q&A.
 
 All AI inference is hosted by Groq: `whisper-large-v3-turbo` for multilingual speech-to-text and `openai/gpt-oss-20b` for text generation. Retrieval uses in-memory keyword matching, so it downloads no embedding model. The host does not install Whisper, PyTorch, Sentence Transformers, or Chroma.
 
@@ -28,27 +28,13 @@ GROQ_API_KEY = "your-real-key"
 ```
 
 `packages.txt` installs FFmpeg and `requirements.txt` contains only lightweight runtime packages.
-The app accepts a YouTube URL or a browser upload; a deployed app cannot read a
-file path on your own computer. Uploads and generated audio are deleted after
+The app accepts browser uploads. Uploads and generated audio are deleted after
 each run.
 
 ## Render
 
 Push the project to GitHub, create a Render **Web Service**, choose the repository Dockerfile runtime, then add `GROQ_API_KEY` as a secret environment variable. The Docker image installs FFmpeg but no local AI models; Render's `PORT` is used automatically.
 
-### YouTube links on Render
-
-YouTube may challenge a shared cloud-server IP as a bot. This is controlled by
-YouTube, not by Groq, FFmpeg, or Render. The reliable public deployment flow is
-to use the **file upload** option instead of a YouTube URL.
-
-For a private college demo, the app can optionally use your own YouTube session
-cookies. Export a fresh `cookies.txt` in Netscape/Mozilla format, base64-encode
-the entire file as one line, and save it in Render as the secret
-`YOUTUBE_COOKIES_B64`. You may also set `YOUTUBE_USER_AGENT` to the matching
-browser User-Agent. Never commit cookies, place them in a public repository, or
-expose this deployment publicly while they are configured: cookies are account
-credentials, expire, and YouTube can still reject a cloud IP.
 
 ## Usage note
 

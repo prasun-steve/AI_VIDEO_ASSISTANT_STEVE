@@ -353,11 +353,10 @@ with st.sidebar:
     st.markdown("---")
 
     st.markdown('<span class="badge badge-purple">Input</span>', unsafe_allow_html=True)
-    source = st.text_input("YouTube URL", placeholder="https://youtube.com/watch?v=...")
     uploaded_file = st.file_uploader(
-        "Or upload an audio/video file",
+        "Upload an audio/video file",
         type=["mp3", "mp4", "m4a", "wav", "webm", "mov", "mpeg", "mpga", "ogg", "flac"],
-        help="Choose either a YouTube URL or one file upload. Uploaded media is deleted after analysis.",
+        help="Your file is deleted after analysis.",
     )
 
     language = st.selectbox("Language", ["english", "hinglish"], index=0)
@@ -384,8 +383,8 @@ st.markdown("---")
 
 # ── Run Pipeline ────────────────────────────────────────────────────────────────
 if run_btn:
-    if bool(source.strip()) == bool(uploaded_file):
-        st.error("Enter a YouTube URL or upload one file (not both).")
+    if not uploaded_file:
+        st.error("Please upload an audio or video file.")
     else:
         missing_keys = ["GROQ_API_KEY"]
         missing_keys = [key for key in missing_keys if not os.getenv(key)]
@@ -410,7 +409,7 @@ if run_btn:
                 st.info("⚙️ Pipeline running — see sidebar for live status…")
 
             update_step("audio", "active")
-            input_source = save_uploaded_file(uploaded_file) if uploaded_file else source.strip()
+            input_source = save_uploaded_file(uploaded_file)
             chunks = process_input(input_source)
             update_step("audio", "done")
 
@@ -459,19 +458,11 @@ if run_btn:
             for k in ["audio","transcript","title","summary","extract","rag"]:
                 if st.session_state.pipeline_steps.get(k) == "active":
                     st.session_state.pipeline_steps[k] = "pending"
-            error_text = str(e).lower()
-            if "sign in to confirm you’re not a bot" in error_text or "sign in to confirm you're not a bot" in error_text:
-                progress_placeholder.error(
-                    "❌ YouTube blocked Render's server IP as automated traffic. "
-                    "Upload the audio/video file instead, or configure the optional "
-                    "YOUTUBE_COOKIES_B64 Render secret. See the README for security notes."
-                )
-            else:
-                progress_placeholder.error(
-                    f"❌ Analysis stopped: {e}\n\n"
-                    "Check that FFmpeg is installed, the selected API key is valid, "
-                    "and the source is accessible; then try again."
-                )
+            progress_placeholder.error(
+                f"❌ Analysis stopped: {e}\n\n"
+                "Check that FFmpeg is installed, the selected API key is valid, "
+                "and the uploaded file is a supported audio or video format; then try again."
+            )
         finally:
             # Covers download/transcription failures without touching user files.
             cleanup_audio_files(chunks)
@@ -589,7 +580,7 @@ else:
             Ready to Analyse
         </div>
         <div style="color:var(--text-muted);font-size:0.85rem;max-width:380px;line-height:1.7">
-            Paste a YouTube URL or upload an audio/video file in the sidebar, choose your language, and hit <strong>Analyse</strong> to get started.
+            Upload an audio/video file in the sidebar, choose your language, and hit <strong>Analyse</strong> to get started.
         </div>
         <div style="margin-top:2rem;display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
             <span class="badge badge-purple">Transcription</span>
