@@ -14,13 +14,21 @@ def _write_youtube_cookies(run_dir: Path) -> Path | None:
     encoded_cookies = os.getenv("YOUTUBE_COOKIES_B64")
     if not encoded_cookies:
         return None
-    try:
-        cookies = base64.b64decode(encoded_cookies, validate=True)
-    except Exception as error:
-        raise RuntimeError(
-            "YOUTUBE_COOKIES_B64 is not valid base64. Export a Netscape "
-            "cookies.txt file and encode it as one line."
-        ) from error
+
+    # Preferred: base64, which is safe to paste as a single Render secret.
+    # Also accept a raw Netscape cookie file pasted into an environment value;
+    # Render supports multiline secret values and this makes setup less fragile.
+    value = encoded_cookies.strip()
+    if value.startswith(("# HTTP Cookie File", "# Netscape HTTP Cookie File")):
+        cookies = value.replace("\\n", "\n").encode("utf-8")
+    else:
+        try:
+            cookies = base64.b64decode(value, validate=True)
+        except Exception as error:
+            raise RuntimeError(
+                "YOUTUBE_COOKIES_B64 must contain either base64-encoded data "
+                "or raw Netscape/Mozilla cookies.txt content."
+            ) from error
     if not cookies.startswith((b"# HTTP Cookie File", b"# Netscape HTTP Cookie File")):
         raise RuntimeError(
             "YOUTUBE_COOKIES_B64 must contain a Netscape/Mozilla cookies.txt file."
