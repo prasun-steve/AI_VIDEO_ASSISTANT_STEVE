@@ -27,7 +27,7 @@ def extract_action_items(transcript:str)->str:
         "Format as a numbered list. If none found say 'No action items found.'"
     )
 
-    return invoke_with_retry(lambda: chain.invoke(transcript), "Mistral action-item extraction")
+    return invoke_with_retry(lambda: chain.invoke(transcript), "Groq action-item extraction")
 
 
 def extract_key_decisions(transcript: str) -> str:
@@ -36,7 +36,7 @@ def extract_key_decisions(transcript: str) -> str:
         "extract all key decisions made. Format as a numbered list. "
         "If none found say 'No key decisions found.'"
     )
-    return invoke_with_retry(lambda: chain.invoke(transcript), "Mistral decision extraction")
+    return invoke_with_retry(lambda: chain.invoke(transcript), "Groq decision extraction")
 
 
 def extract_questions(transcript: str) -> str:
@@ -45,4 +45,4 @@ def extract_questions(transcript: str) -> str:
         "or topics needing follow-up. Format as a numbered list. "
         "If none found say 'No open questions found.'"
     )
-    return invoke_with_retry(lambda: chain.invoke(transcript), "Mistral question extraction")
+    return invoke_with_retry(lambda: chain.invoke(transcript), "Groq question extraction")

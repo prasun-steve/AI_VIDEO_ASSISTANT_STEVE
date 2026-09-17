@@ -32,7 +32,7 @@ def summarize(transcript : str) -> str:
     chunks = split_transcript(transcript)
 
     chunk_summaries = [
-        invoke_with_retry(lambda chunk=chunk: map_chain.invoke({"text": chunk}), "Mistral summary")
+        invoke_with_retry(lambda chunk=chunk: map_chain.invoke({"text": chunk}), "Groq summary")
         for chunk in chunks
     ]
 
@@ -53,7 +53,7 @@ def summarize(transcript : str) -> str:
         RunnablePassthrough() | RunnableLambda(lambda x:{"text":x}) | combined_prompt | llm | StrOutputParser()
     )
 
-    return invoke_with_retry(lambda: combined_chain.invoke(combined), "Mistral summary")
+    return invoke_with_retry(lambda: combined_chain.invoke(combined), "Groq summary")
 
 def generate_title(transcipt : str) -> str:
     llm = get_llm(temperature=0.3)
@@ -74,6 +74,5 @@ def generate_title(transcipt : str) -> str:
         |StrOutputParser()
     )
 
-    return invoke_with_retry(lambda: title_chain.invoke(transcipt[:2000]), "Mistral title generation")
-
+    return invoke_with_retry(lambda: title_chain.invoke(transcipt[:2000]), "Groq title generation")
 

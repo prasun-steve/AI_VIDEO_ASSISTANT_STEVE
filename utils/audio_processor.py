@@ -1,11 +1,33 @@
 import yt_dlp
 from pydub import AudioSegment
+import base64
 import os
 from pathlib import Path
 from uuid import uuid4
 
 DOWNLOAD_DIR = Path(__file__).resolve().parents[1] / "downloades"
 DOWNLOAD_DIR.mkdir(exist_ok=True)
+
+
+def _write_youtube_cookies(run_dir: Path) -> Path | None:
+    """Materialize an optional Render secret as a short-lived cookie file."""
+    encoded_cookies = os.getenv("YOUTUBE_COOKIES_B64")
+    if not encoded_cookies:
+        return None
+    try:
+        cookies = base64.b64decode(encoded_cookies, validate=True)
+    except Exception as error:
+        raise RuntimeError(
+            "YOUTUBE_COOKIES_B64 is not valid base64. Export a Netscape "
+            "cookies.txt file and encode it as one line."
+        ) from error
+    if not cookies.startswith((b"# HTTP Cookie File", b"# Netscape HTTP Cookie File")):
+        raise RuntimeError(
+            "YOUTUBE_COOKIES_B64 must contain a Netscape/Mozilla cookies.txt file."
+        )
+    cookie_path = run_dir / "youtube-cookies.txt"
+    cookie_path.write_bytes(cookies)
+    return cookie_path
 
 
 def save_uploaded_file(uploaded_file) -> str:
@@ -38,6 +60,12 @@ def download_youtube_audio(url :str) ->str:
         ],
         "quiet": True,
     }
+    cookie_path = _write_youtube_cookies(run_dir)
+    if cookie_path:
+        ydl_opts["cookiefile"] = str(cookie_path)
+    user_agent = os.getenv("YOUTUBE_USER_AGENT")
+    if user_agent:
+        ydl_opts["http_headers"] = {"User-Agent": user_agent}
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.extract_info(url, download=True)
     wav_files = list(run_dir.glob("*.wav"))

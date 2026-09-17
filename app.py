@@ -459,11 +459,19 @@ if run_btn:
             for k in ["audio","transcript","title","summary","extract","rag"]:
                 if st.session_state.pipeline_steps.get(k) == "active":
                     st.session_state.pipeline_steps[k] = "pending"
-            progress_placeholder.error(
-                f"❌ Analysis stopped: {e}\n\n"
-                "Check that FFmpeg is installed, the selected API key is valid, "
-                "and the source is accessible; then try again."
-            )
+            error_text = str(e).lower()
+            if "sign in to confirm you’re not a bot" in error_text or "sign in to confirm you're not a bot" in error_text:
+                progress_placeholder.error(
+                    "❌ YouTube blocked Render's server IP as automated traffic. "
+                    "Upload the audio/video file instead, or configure the optional "
+                    "YOUTUBE_COOKIES_B64 Render secret. See the README for security notes."
+                )
+            else:
+                progress_placeholder.error(
+                    f"❌ Analysis stopped: {e}\n\n"
+                    "Check that FFmpeg is installed, the selected API key is valid, "
+                    "and the source is accessible; then try again."
+                )
         finally:
             # Covers download/transcription failures without touching user files.
             cleanup_audio_files(chunks)
