@@ -1,0 +1,10 @@
+# Hosted-AI deployment dependencies. No local model runtime is installed.
+streamlit>=1.35.0
+yt-dlp>=2025.1.15
+pydub>=0.25.1
+# Official Groq SDK used by core/transcriber.py and core/llm.py.
+# Pinning prevents a host from resolving an old release without ``Groq``.
+groq==1.7.0
+langchain-core>=0.3.0
+langchain-text-splitters>=0.3.0
+python-dotenv>=1.0.0
